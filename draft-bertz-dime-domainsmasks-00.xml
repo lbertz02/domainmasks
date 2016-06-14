@@ -1,0 +1,405 @@
+<?xml version="1.0" encoding="US-ASCII"?>
+<!DOCTYPE rfc SYSTEM "rfc2629.dtd" [
+<!ENTITY RFC1034 SYSTEM "http://xml.resource.org/public/rfc/bibxml/reference.RFC.1034.xml">
+<!ENTITY RFC2119 SYSTEM "http://xml.resource.org/public/rfc/bibxml/reference.RFC.2119.xml">
+<!ENTITY RFC2460 SYSTEM "http://xml.resource.org/public/rfc/bibxml/reference.RFC.2460.xml">
+<!ENTITY RFC4033 SYSTEM "http://xml.resource.org/public/rfc/bibxml/reference.RFC.4033.xml">
+<!ENTITY RFC4592 SYSTEM "http://xml.resource.org/public/rfc/bibxml/reference.RFC.4592.xml">
+<!ENTITY RFC5777 SYSTEM "http://xml.resource.org/public/rfc/bibxml/reference.RFC.5777.xml">
+<!ENTITY RFC6088 SYSTEM "http://xml.resource.org/public/rfc/bibxml/reference.RFC.6088.xml">
+<!ENTITY RFC6733 SYSTEM "http://xml.resource.org/public/rfc/bibxml/reference.RFC.6733.xml">
+<!ENTITY RFC7155 SYSTEM "http://xml.resource.org/public/rfc/bibxml/reference.RFC.7155.xml">
+]>
+
+<?xml-stylesheet type="text/xsl" href="rfc2629.xslt"?>
+<?rfc toc="yes" ?>
+<?rfc symrefs="yes" ?>
+<?rfc sortrefs="yes"?>
+<?rfc iprnotified="no" ?>
+<?rfc strict="no" ?>
+<?rfc compact="yes" ?>
+<?rfc subcompact="no" ?>
+
+<rfc category="info" docName="draft-bertz-dime-domainmasks-00" ipr="pre5378Trust200902">
+ <front>
+   <title>Diameter Domain and Arbitrary Mask Filters</title>
+
+   <author fullname="Lyle Bertz" initials="L." surname="Bertz">
+     <organization>Sprint</organization>
+     <address>
+       <postal>
+         <street>6220 Sprint Parkway</street>
+         <city>Overland Park</city>
+         <region>KS</region>
+         <code>66251</code>
+         <country>United States</country>
+       </postal>
+       <email>lylebe551144@gmail.com</email>
+     </address>
+   </author>
+
+   <date year="2016" />
+
+   <area>Operations and Management Area</area>
+
+   <workgroup>Diameter Maintenance and Extensions</workgroup>
+
+   <keyword>diameter</keyword>
+   <keyword>rfc5777</keyword>
+   <keyword>filter</keyword>
+   <keyword>domain</keyword>
+   <keyword>masks</keyword>
+
+   <abstract>
+<t>
+     This document defines optional Diameter attributes to specify
+     filters by hosts/domains and attributes required by Software
+     Defined Networking (SDN) enabled enforcement points.
+</t>
+   </abstract>
+ </front>
+
+ <middle>
+   <section title="Introduction" anchor="intro">
+<t>
+    An optional Diameter Attribute Value Pair (AVP) is defined
+    in this document for DNS support.  It is the DNS-Filters AVP
+    which contains a list of DNS query names that follow the
+    registered name QNAME format defined in <xref target="RFC1034"/>, Section 3.7.1
+    and subsequent updates, notably <xref target="RFC4592"/>.
+</t>
+<t>
+    DNS Filter AVPs are used in various operator policy enforcement
+    applications such as child protections, parental controls and
+    flow based rating.
+</t>
+<t>
+    Current practices require any updates to these applications to
+    be sideloaded, i.e. updated via a file, on the enforcement points
+    or proprietary mechanism.  As an AVP, the list of entries in the
+    AVP may be dynamically updated per current Diameter application
+    specifications, e.g. <xref target="RFC7155"/>.
+</t>
+<t>
+    The second AVP, ArbitraryMask-AVP, defines an arbitrary
+    bitmask for various maskable AVPs used in Classifiers <xref target="RFC5777"/>.
+</t>
+<t>
+    Prefix based masks are present in <xref target="RFC5777"/> but the
+    technologies such as Software Defined Networking (SDN) introduce
+    new arbitrary bitmasks on multiple data types in the various
+    protocol headers.
+</t>
+   </section>
+   <section title="Terminology" anchor="terms" >
+<t>
+    In this document, the key words "MAY", "MUST", "MUST NOT", "OPTIONAL",
+    "RECOMMENDED", "SHOULD", and "SHOULD NOT", are to be interpreted as
+    described in <xref target="RFC2119"/>.
+</t>
+   </section>
+   <section title="DNS-Filters and ArbitraryMasks Attributes" anchor="avps">
+   <section title="DNS-Filters AVP" anchor="dnsfilter">
+<t>
+    The DNS-Filters AVP (AVP Code TBD1) is of type Grouped and
+    specifies the list of QNAMES <xref target="RFC1034"/> that restrict
+    ip flows (5-tuples) that match the Classifier.
+</t>
+<figure><artwork><![CDATA[
+ DNS-Filters ::= < AVP Header: TBD1 >
+                         1*{ <QNAMES> }
+                         * [ AVP ]
+]]>
+</artwork></figure>
+<t>
+    QNAMES are defined in <xref target="RFC1034"/>, Section 3.7.1.
+</t>
+<t>
+    When this AVP is used for classification in the Filter-Rule, it MUST
+    be part of the Classifier Grouped AVP as defined in <xref target="RFC5777"/>.
+</t>
+     </section>
+
+  <section title="Software Defined Network (SDN) Attributes" anchor="sdn">
+  <section title="IP-Address-Mask-Pattern AVP" anchor="ipmaskpat">
+<t>
+   The IP-Address-Mask-Pattern AVP (AVP Code TBD2) is of type
+   OctetString.  The value is 4 octets specifying the bit positions of a
+   IP address that are taken for matching.
+</t>
+<t>
+    When this AVP is used for classification in the Filter-Rule, it MUST
+    be part of the Classifier Grouped AVP as defined in <xref target="RFC5777"/>.
+</t>
+   </section>
+   <section title="Flow-Label AVP" anchor="flowid">
+<t>
+   The Flow-Label AVP (AVP Code TBD3) is of type Unsigned32. This field
+   identifies the Flow Label value to be matched.
+</t>
+<t>
+   According to <xref target="RFC2460"/>, the flow label is 20 bits long.  For the
+   purpose of this specification, the sender of this option MUST
+   prefix the flow label value with 12 bits of "0" before inserting it
+   in the Flow-Label AVP.  The receiver SHOULD ignore the first 12
+   bits of this field before using it in comparisons with flow labels
+   in packets.
+</t>
+<t>
+    When this AVP is used for classification in the Filter-Rule, it MUST
+    be part of the Classifier Grouped AVP as defined in <xref target="RFC5777"/>.
+</t>
+   </section>
+   <section title="Flow-Label-Mask-Pattern AVP" anchor="flowidmask">
+<t>
+   The Flow-Label-Mask-Pattern AVP (AVP Code TBD3) is of type
+   OctetString.  The value is 4 octets specifying the bit positions of a
+   Flow Label that are taken for matching.
+</t>
+<t>
+   According to <xref target="RFC2460"/>, the flow label is 20 bits long.  For the
+   purpose of this specification, the sender of this option MUST
+   prefix the flow label value with 12 bits of "0" before inserting it
+   in the Flow Label Mask Pattern AVP.  The receiver SHOULD ignore
+   the first 12 bits of this field before using it as a mask.
+</t>
+<t>
+    When this AVP is used for classification in the Filter-Rule, it MUST
+    be part of the Classifier Grouped AVP as defined in <xref target="RFC5777"/>.
+</t>
+   </section>
+    </section>
+</section>
+<section title="Examples" anchor="example">
+<section title="DNS Filter" anchor="dnsfilterex">
+<t>
+   The Classifier AVP (AVP Code 511) specified in <xref target="RFC5777"/> is a grouped
+   AVP that consists of a set of attributes that specify how to match a
+   packet.  The addition of the DNS-Filter AVP is shown here.
+</t>
+<figure><artwork><![CDATA[
+      Classifier ::= < AVP Header: 511 >
+                     { Classifier-ID }
+                     [ Protocol ]
+                     [ Direction ]
+                     [ DNS-Filters ]
+                   * [ From-Spec ]
+                   * [ To-Spec ]
+                   * [ Diffserv-Code-Point ]
+                     [ Fragmentation-Flag ]
+                   * [ IP-Option ]
+                   * [ TCP-Option ]
+                     [ TCP-Flags ]
+                   * [ ICMP-Type ]
+                   * [ ETH-Option ]
+                   * [ AVP ]
+]]></artwork></figure>
+<t>
+   Setting the DNS-Filter value would specify the capture flows whose
+   DNS related communications match the QUERY values specified in the
+   Classifier.
+</t>
+<t>
+   DNS related communications are those DNS queries which have valid
+   DNS responses for scope implied by the container of the
+   Classifier, i.e. if the Classifer is contained by a Filter-Rule
+   installed during a mobility session then only resulting IP
+   addresses conatined in DNS traffic for the mobility session is
+   used in the selection of flows.
+</t>
+<t>
+   The use of the DNS-Filters AVP implies that the following conditions
+   exist:
+   <list style="symbols">
+         <t>The related DNS traffic is known by the enforcement point</t>
+         <t>The related DNS traffic is viewable by the enforcement point</t>
+   </list>
+</t>
+<t>
+   Such conditions are met in network services related to child
+   protections and parental controls.
+</t>
+<t>
+   Use of secured DNS communications <xref target="RFC4033"/> is recommended.
+   In such a case the enforemcent point may be a DNS relay used, as
+   part of the network access service, to enforce or report generate
+   Diameter events in applications such as Application Detection and
+   Charging <xref target="TGPPCC"/> using DNS-Filters.
+</t>
+</section>
+<section title="SDN Related AVP application" anchor="sdnapp">
+<t>
+   The From-Spec AVP (AVP Code 515) and To-Spec AVP (AVP Code 516)
+   specified in <xref target="RFC5777"/> are grouped AVPs that
+   consist of a set of attributes that specify how to match a
+   packet in the From/To direction (respectively).  The addition of
+   the SDN related AVPs are shown here.
+</t>
+<figure><artwork><![CDATA[
+   From-Spec ::= < AVP Header: 515 >
+               * [ IP-Address ]
+               * [ IP-Address-Range ]
+               * [ IP-Address-Mask ]
+               * [ MAC-Address ]
+               * [ MAC-Address-Mask]
+               * [ EUI64-Address ]
+               * [ EUI64-Address-Mask]
+               * [ Port ]
+               * [ Port-Range ]
+                 [ Negated ]
+                 [ Use-Assigned-Address ]
+               * [ IP-Address-Mask-Pattern ]
+               * [ Flow-Label ]
+               * [ Flow-Label-Mask-Pattern ]
+               * [ AVP ]
+]]></artwork></figure>
+<t><vspace/></t>
+<figure><artwork><![CDATA[
+   To-Spec ::= < AVP Header: 516 >
+             * [ IP-Address ]
+             * [ IP-Address-Range ]
+             * [ IP-Address-Mask ]
+             * [ MAC-Address ]
+             * [ MAC-Address-Mask]
+             * [ EUI64-Address ]
+             * [ EUI64-Address-Mask]
+             * [ Port ]
+             * [ Port-Range ]
+               [ Negated ]
+               [ Use-Assigned-Address ]
+             * [ IP-Address-Mask-Pattern ]
+             * [ Flow-Label ]
+             * [ Flow-Label-Mask-Pattern ]
+             * [ AVP ]
+ ]]></artwork></figure>
+<t>
+   Setting the IP-Address-Mask-Pattern value would permit the
+   capture of an arbitrarily masked IP pattern the flow. NOTE that
+   if the value of this AVP is only '1' starting from the least
+   significant bit it is no different than the IP-Address-Mask which
+   could be used instead.
+</t>
+<t>
+   Setting the Flow-Label value would permit capture of IPv6 packets
+   with a specific Flow Label.  Setting the Flow-Label-Mask-Pattern
+   permits the capture of flows that match the appropriate mask
+   pattern applied to the Flow Label.
+</t>
+</section>
+</section>
+   <section anchor="IANA" title="IANA Considerations">
+<t>
+   IANA allocated AVP codes in the IANA-controlled namespace registry
+   specified in Section 11.1.1 of <xref target="RFC6733"/> for the following AVPs that
+   are defined in this document.
+</t>
+<texttable>
+  <ttcol>AVP</ttcol>
+  <ttcol>AVP Code</ttcol>
+  <ttcol>Section Defined</ttcol>
+  <ttcol>Data Type</ttcol>
+
+  <c>DNS-Filters</c>
+  <c>TBD1</c>
+  <c><xref target="dnsfilter"/></c>
+  <c>GROUPED</c>
+
+  <c>IP-Address-Mask-Pattern</c>
+  <c>TBD2</c>
+  <c><xref target="ipmaskpat"/></c>
+  <c>OctetString</c>
+
+  <c>Flow-Label</c>
+  <c>TBD3</c>
+  <c><xref target="flowid"/></c>
+  <c>Unsigned32</c>
+
+  <c>Flow-Label-Mask-Pattern</c>
+  <c>TBD4</c>
+  <c><xref target="flowidmask"/></c>
+  <c>OctetString</c>
+</texttable>
+   </section>
+   <section anchor="Security" title="Security Considerations">
+<section title="DNS-Filters Usage" anchor="dnsfiltersec">
+<t>
+    The use of DNS-Filters AVP implies visible access to DNS traffic
+    associated with the containing rule's, e.g. Filter-Rule <xref target="RFC5777"/>.  It
+    does not imply a specific design for DNS communications but it is
+    strongly recommended that secured DNS communciations <xref target="RFC4033"/> are used.
+</t>
+<t>
+    In other words, it is NOT recommended to turn off secured DNS
+    communications if this value is present.   Rather, a Diameter
+    application appropriate error should be thrown to indicate the
+    rule cannot be enforced.
+</t>
+<t>
+    An operator that can accomplish the same use cases, e.g. child
+    protection or parental control, without the need to see customer
+    DNS traffic is encouraged to do so.
+</t>
+</section>
+<section title="SDN AVP Usage" anchor="sdnavpsec">
+<t>
+   This document describes SDN related attributes an extension of <xref target="RFC5777"/>.
+</t>
+<t>
+   It introduces a new to/from arbitraty mask for IP addresses.
+   As this is an extension to <xref target="RFC5777"/>, which
+   already has an IP-Address-Mask defined it does not raise new
+   security concerns.
+</t>
+<t>
+   This document does introduce the ability to filter upon the IPv6
+   Flow Labels <xref target="RFC2460"/>. Even though this is a
+   visible IP header it was not previously defined in Diameter
+   related filters but has been used for activities such as Traffic
+   Selection <xref target="RFC6088"/>.
+</t>
+<t>
+   Per <xref target="RFC2460"/> the flow label is used by a source
+   to request special handling by routers.  If a specific type of
+   host has known flow label usage, i.e. signature, inspection of
+   this field over one or more flows may yield information.  However,
+   the flow label is visible in the IPv6 header and thus this
+   information is discernable by any device with access to the IPv6
+   packet.  Recommendations on the security considerations of IPv6
+   flow usage is outside of the scope of this document.
+</t>
+</section>
+</section>
+ </middle>
+ <back>
+   <references title="Normative References">
+     &RFC1034;
+
+     &RFC2119;
+
+     &RFC2460;
+
+     &RFC5777;
+
+     &RFC6733;
+
+     <reference anchor="TGPPCC">
+       <front>
+         <title>Policy Charging and Control (PCC); Reference Points,
+               (release 13), 3GPP TS 29.212 v. 13.5.0</title>
+         <author><organization>3rd Generation Partnership Project</organization></author>
+         <date year="2016-04" />
+       </front>
+     </reference>
+   </references>
+
+   <references title="Informative References">
+     &RFC4033;
+
+     &RFC4592;
+
+     &RFC6088;
+
+     &RFC7155;
+   </references>
+ </back>
+</rfc>
